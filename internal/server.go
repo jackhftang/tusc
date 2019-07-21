@@ -27,13 +27,26 @@ Options:
   -h --host HOST                  Host to bind HTTP server to [default: 0.0.0.0]
   -p --port PORT                  Port to bind HTTP server to [default: 1080]
   -d --dir PATH                   Directory to store uploads in [default: ./data]
-  -b --base-path PATH             Basepath of the HTTP server [default: /files/]
+  --base-path PATH             Basepath of the HTTP server [default: /files/]
   --unix-sock PATH                If set will listen to a UNIX socket at this location instead of a TCP socket
   --max-size SIZE                 Maximum size of a single upload in bytes [default: 0]
   --store-size BYTE               Size of space allowed for storage [default: 0]
   --timeout TIMEOUT               Read timeout for connections in milliseconds.  A zero value means that reads will not timeout [default: 30*1000]
   --behind-proxy                  Respect X-Forwarded-* and similar headers which may be set by proxies [default: false]
 `
+
+type ServerConf struct {
+  httpHost        string
+  httpPort        string
+  httpSock        string
+  maxSize         int64
+  uploadDir       string
+  storeSize       int64
+  listingEndpoint string
+  uploadEndpoint  string
+  timeout         int64
+  isBehindProxy   bool
+}
 
 var stdout = log.New(os.Stdout, "[tusd] ", log.Ldate|log.Ltime)
 var stderr = log.New(os.Stderr, "[tusd] ", log.Ldate|log.Ltime)
@@ -43,62 +56,63 @@ func logEv(logOutput *log.Logger, eventName string, details ...string) {
 }
 
 func Server() {
+  var conf ServerConf
   arguments, _ := docopt.ParseDoc(serverUsage)
-  var httpHost, _ = arguments.String("--host")
-  var httpPort, _ = arguments.String("--port")
-  var httpSock, _ = arguments.String("--unix-sock")
-  var maxSize = util.GetInt64(arguments, "--max-size")
-  var uploadDir, _ = arguments.String("--dir")
-  var storeSize = util.GetInt64(arguments, "--store-size")
-  var listingEndpoint = "/"
-  var uploadEndpoint, _ = arguments.String("--base-path")
-  var timeout = util.GetInt64(arguments, "--timeout")
-  var isBehindProxy, _ = arguments.Bool("--behind-proxy")
+  conf.httpHost, _ = arguments.String("--host")
+  conf.httpPort, _ = arguments.String("--port")
+  conf.httpSock, _ = arguments.String("--unix-sock")
+  conf.maxSize = util.GetInt64(arguments, "--max-size")
+  conf.uploadDir, _ = arguments.String("--dir")
+  conf.storeSize = util.GetInt64(arguments, "--store-size")
+  conf.listingEndpoint = "/"
+  conf.uploadEndpoint, _ = arguments.String("--base-path")
+  conf.timeout = util.GetInt64(arguments, "--timeout")
+  conf.isBehindProxy, _ = arguments.Bool("--behind-proxy")
 
   storeCompoesr := tusd.NewStoreComposer()
 
-  stdout.Printf("Using '%s' as directory storage.\n", uploadDir)
-  if err := os.MkdirAll(uploadDir, os.FileMode(0774)); err != nil {
+  stdout.Printf("Using '%s' as directory storage.\n", conf.uploadDir)
+  if err := os.MkdirAll(conf.uploadDir, os.FileMode(0774)); err != nil {
     stderr.Fatalf("Unable to ensure directory exists: %s", err)
   }
-  store := filestore.New(uploadDir)
+  store := filestore.New(conf.uploadDir)
   store.UseIn(storeCompoesr)
 
-  if storeSize > 0 {
-    limitedstore.New(storeSize, storeCompoesr.Core, storeCompoesr.Terminater).UseIn(storeCompoesr)
-    stdout.Printf("Using %.2fMB as storage size.\n", float64(storeSize)/1024/1024)
+  if conf.storeSize > 0 {
+    limitedstore.New(conf.storeSize, storeCompoesr.Core, storeCompoesr.Terminater).UseIn(storeCompoesr)
+    stdout.Printf("Using %.2fMB as storage size.\n", float64(conf.storeSize)/1024/1024)
 
     // We need to ensure that a single upload can fit into the storage size
-    if maxSize > storeSize || maxSize == 0 {
-      maxSize = storeSize
+    if conf.maxSize > conf.storeSize || conf.maxSize == 0 {
+      conf.maxSize = conf.storeSize
     }
   }
 
-  stdout.Printf("Using %.2fMB as maximum size.\n", float64(maxSize)/1024/1024)
+  stdout.Printf("Using %.2fMB as maximum size.\n", float64(conf.maxSize)/1024/1024)
 
   // Serve
 
   // Address
   address := ""
-  if httpSock != "" {
-    address = httpSock
+  if conf.httpSock != "" {
+    address = conf.httpSock
     stdout.Printf("Using %s as socket to listen.\n", address)
   } else {
-    address = httpHost + ":" + httpPort
+    address = conf.httpHost + ":" + conf.httpPort
     stdout.Printf("Using %s as address to listen.\n", address)
   }
 
   // Base path
-  stdout.Printf("Using %s as the base path.\n", uploadEndpoint)
+  stdout.Printf("Using %s as the base path.\n", conf.uploadEndpoint)
 
   // show capabilities
   stdout.Printf(storeCompoesr.Capabilities())
 
   // tus handler
   handler, err := tusd.NewHandler(tusd.Config{
-    MaxSize:                 maxSize,
-    BasePath:                uploadEndpoint,
-    RespectForwardedHeaders: isBehindProxy,
+    MaxSize:                 conf.maxSize,
+    BasePath:                conf.uploadEndpoint,
+    RespectForwardedHeaders: conf.isBehindProxy,
     StoreComposer:           storeCompoesr,
     NotifyCompleteUploads:   false,
     NotifyTerminatedUploads: false,
@@ -109,19 +123,19 @@ func Server() {
     stderr.Fatalf("Unable to create handler: %s", err)
   }
 
-  http.Handle(uploadEndpoint, http.StripPrefix(uploadEndpoint, handler))
-  if listingEndpoint != uploadEndpoint {
-    http.Handle(listingEndpoint, http.StripPrefix(listingEndpoint, homepage(store)))
+  http.Handle(conf.uploadEndpoint, http.StripPrefix(conf.uploadEndpoint, handler))
+  if conf.listingEndpoint != conf.uploadEndpoint {
+    http.Handle(conf.listingEndpoint, http.StripPrefix(conf.listingEndpoint, homepage(store)))
   }
 
   var listener net.Listener
-  timeoutDuration := time.Duration(timeout) * time.Millisecond
+  timeoutDuration := time.Duration(conf.timeout) * time.Millisecond
 
-  if httpSock != "" {
+  if conf.httpSock != "" {
     if listener, err = util.NewUnixListener(address, timeoutDuration, timeoutDuration); err != nil {
       stderr.Fatalf("Unable to create listener: %s", err)
     }
-    stdout.Printf("You can now upload files to: http://%s%s", address, uploadEndpoint)
+    stdout.Printf("You can now upload files to: http://%s%s", address, conf.uploadEndpoint)
   } else {
     if listener, err = util.NewListener(address, timeoutDuration, timeoutDuration); err != nil {
       stderr.Fatalf("Unable to create listener: %s", err)

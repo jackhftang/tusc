@@ -23,24 +23,31 @@ Options:
   --override-patch-method   Sending a POST request instead of PATCH [default: false]
 `
 
+type ClientConf struct {
+  file   string
+  url    string
+  resume bool
+}
+
 func Client() {
   var err error
-  arguments, _ := docopt.ParseDoc(clientUsage)
 
-  file, _ := arguments.String("<file>")
-  url, _ := arguments.String("<url>")
-  resume := util.GetBool(arguments, "--resumable")
+  var conf ClientConf
+  arguments, _ := docopt.ParseDoc(clientUsage)
+  conf.file, _ = arguments.String("<file>")
+  conf.url, _ = arguments.String("<url>")
+  conf.resume = util.GetBool(arguments, "--resumable")
 
   // open file
-  f, err := os.Open(file)
+  f, err := os.Open(conf.file)
   if err != nil {
-    util.ExitWithMessages("Cannot open file: " + file)
+    util.ExitWithMessages("Cannot open file: " + conf.file)
   }
   defer f.Close()
 
   // create the tus client
   var store tus.Store
-  if resume {
+  if conf.resume {
     path := util.GetString(arguments, "--store")
     store, err = leveldbstore.NewLeveldbStore(path)
     if err != nil {
@@ -48,10 +55,10 @@ func Client() {
     }
   }
 
-  client, _ := tus.NewClient(url, &tus.Config{
+  client, _ := tus.NewClient(conf.url, &tus.Config{
     ChunkSize:           util.GetInt64(arguments, "--chuck-size"),
     OverridePatchMethod: util.GetBool(arguments, "--override-patch-method"),
-    Resume:              resume,
+    Resume:              conf.resume,
     Store:               store,
     Header:              make(http.Header),
     HttpClient:          nil,
@@ -65,7 +72,7 @@ func Client() {
 
   // create the uploader.
   var uploader *tus.Uploader
-  if resume {
+  if conf.resume {
     uploader, err = client.CreateOrResumeUpload(upload)
   } else {
     uploader, err = client.CreateUpload(upload)
