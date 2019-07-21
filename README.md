@@ -3,8 +3,11 @@
 ![build status](https://travis-ci.com/jackhftang/tusc.svg?branch=master)
 
 A single binary for both server and client of [tus resumable upload protocol](https://tus.io). 
+
 This is a trim-down version of [tusd](https://github.com/tus/tusd) in favor of smaller binary size (< 10 MB rather than > 30MB). 
-S3, GCS, Prometheus, Hooks are not include. For client part, this a is command line implementation of [go-tusd](https://github.com/eventials/go-tus).
+S3, GCS, Prometheus, Hooks are not include (a.k.a. plain old http server with file storage). 
+
+For client, this is a command line implementation this library [go-tusd](https://github.com/eventials/go-tus).
 
 ### Quick Start  
 
