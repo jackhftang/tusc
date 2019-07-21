@@ -2,6 +2,7 @@ package internal
 
 import (
   "fmt"
+  "github.com/bmizerany/pat"
   "github.com/docopt/docopt-go"
   "github.com/jackhftang/tusc/internal/util"
   "github.com/tus/tusd"
@@ -24,10 +25,12 @@ Usage:
   tusc (server|s) --help
 
 Options:
-  -h --host HOST                  Host to bind HTTP server to [default: 0.0.0.0]
+  -u --url URL                    Url of HTTP server [default: http://localhost:1080]
+  -b --bind ADDR                  Address to bind HTTP server to [default: 0.0.0.0]
   -p --port PORT                  Port to bind HTTP server to [default: 1080]
   -d --dir PATH                   Directory to store uploads in [default: ./data]
-  --base-path PATH             Basepath of the HTTP server [default: /files/]
+  --listing-endpoint PATH         Http path for flies listing [default: /]
+  --files-endpoint PATH           Http path for files [default: /files/]
   --unix-sock PATH                If set will listen to a UNIX socket at this location instead of a TCP socket
   --max-size SIZE                 Maximum size of a single upload in bytes [default: 0]
   --store-size BYTE               Size of space allowed for storage [default: 0]
@@ -36,16 +39,17 @@ Options:
 `
 
 type ServerConf struct {
-  httpHost        string
-  httpPort        string
-  httpSock        string
-  maxSize         int64
-  uploadDir       string
-  storeSize       int64
-  listingEndpoint string
-  uploadEndpoint  string
-  timeout         int64
-  isBehindProxy   bool
+  Url             string `docopt:"--url"`
+  BindAddr        string `docopt:"--bind"`
+  Port            string `docopt:"--port"`
+  HttpSock        string `docopt:"--unix-sock"`
+  MaxSize         int64  `docopt:"--max-size"`
+  UploadDir       string `docopt:"--dir"`
+  StoreSize       int64  `docopt:"--store-size"`
+  ListingEndpoint string `docopt:"--listing-endpoint"`
+  FilesEndpoint   string `docopt:"--files-endpoint"`
+  Timeout         int64  `docopt:"--timeout"`
+  IsBehindProxy   bool   `docopt:"--behind-proxy"`
 }
 
 var stdout = log.New(os.Stdout, "[tusd] ", log.Ldate|log.Ltime)
@@ -58,61 +62,62 @@ func logEv(logOutput *log.Logger, eventName string, details ...string) {
 func Server() {
   var conf ServerConf
   arguments, _ := docopt.ParseDoc(serverUsage)
-  conf.httpHost, _ = arguments.String("--host")
-  conf.httpPort, _ = arguments.String("--port")
-  conf.httpSock, _ = arguments.String("--unix-sock")
-  conf.maxSize = util.GetInt64(arguments, "--max-size")
-  conf.uploadDir, _ = arguments.String("--dir")
-  conf.storeSize = util.GetInt64(arguments, "--store-size")
-  conf.listingEndpoint = "/"
-  conf.uploadEndpoint, _ = arguments.String("--base-path")
-  conf.timeout = util.GetInt64(arguments, "--timeout")
-  conf.isBehindProxy, _ = arguments.Bool("--behind-proxy")
+  //arguments.Bind(&conf) // todo: bug
+  conf.Url, _ = arguments.String("--url")
+  conf.BindAddr, _ = arguments.String("--bind")
+  conf.Port, _ = arguments.String("--port")
+  conf.HttpSock, _ = arguments.String("--unix-sock")
+  conf.MaxSize = util.GetInt64(arguments, "--max-size")
+  conf.UploadDir, _ = arguments.String("--dir")
+  conf.StoreSize = util.GetInt64(arguments, "--store-size")
+  conf.ListingEndpoint, _ = arguments.String("--listing-endpoint")
+  conf.FilesEndpoint, _ = arguments.String("--files-endpoint")
+  conf.Timeout = util.GetInt64(arguments, "--timeout")
+  conf.IsBehindProxy, _ = arguments.Bool("--behind-proxy")
+  fmt.Println(conf)
 
   storeCompoesr := tusd.NewStoreComposer()
 
-  stdout.Printf("Using '%s' as directory storage.\n", conf.uploadDir)
-  if err := os.MkdirAll(conf.uploadDir, os.FileMode(0774)); err != nil {
+  stdout.Printf("Using '%s' as directory storage.\n", conf.UploadDir)
+  if err := os.MkdirAll(conf.UploadDir, os.FileMode(0774)); err != nil {
     stderr.Fatalf("Unable to ensure directory exists: %s", err)
   }
-  store := filestore.New(conf.uploadDir)
+  store := filestore.New(conf.UploadDir)
   store.UseIn(storeCompoesr)
 
-  if conf.storeSize > 0 {
-    limitedstore.New(conf.storeSize, storeCompoesr.Core, storeCompoesr.Terminater).UseIn(storeCompoesr)
-    stdout.Printf("Using %.2fMB as storage size.\n", float64(conf.storeSize)/1024/1024)
+  if conf.StoreSize > 0 {
+    limitedstore.New(conf.StoreSize, storeCompoesr.Core, storeCompoesr.Terminater).UseIn(storeCompoesr)
+    stdout.Printf("Using %.2fMB as storage size.\n", float64(conf.StoreSize)/1024/1024)
 
     // We need to ensure that a single upload can fit into the storage size
-    if conf.maxSize > conf.storeSize || conf.maxSize == 0 {
-      conf.maxSize = conf.storeSize
+    if conf.MaxSize > conf.StoreSize || conf.MaxSize == 0 {
+      conf.MaxSize = conf.StoreSize
     }
   }
 
-  stdout.Printf("Using %.2fMB as maximum size.\n", float64(conf.maxSize)/1024/1024)
-
-  // Serve
+  stdout.Printf("Using %.2fMB as maximum size.\n", float64(conf.MaxSize)/1024/1024)
 
   // Address
   address := ""
-  if conf.httpSock != "" {
-    address = conf.httpSock
+  if conf.HttpSock != "" {
+    address = conf.HttpSock
     stdout.Printf("Using %s as socket to listen.\n", address)
   } else {
-    address = conf.httpHost + ":" + conf.httpPort
+    address = conf.BindAddr + ":" + conf.Port
     stdout.Printf("Using %s as address to listen.\n", address)
   }
 
   // Base path
-  stdout.Printf("Using %s as the base path.\n", conf.uploadEndpoint)
+  stdout.Printf("Using %s as the base path.\n", conf.FilesEndpoint)
 
   // show capabilities
   stdout.Printf(storeCompoesr.Capabilities())
 
   // tus handler
   handler, err := tusd.NewHandler(tusd.Config{
-    MaxSize:                 conf.maxSize,
-    BasePath:                conf.uploadEndpoint,
-    RespectForwardedHeaders: conf.isBehindProxy,
+    MaxSize:                 conf.MaxSize,
+    BasePath:                conf.FilesEndpoint,
+    RespectForwardedHeaders: conf.IsBehindProxy,
     StoreComposer:           storeCompoesr,
     NotifyCompleteUploads:   false,
     NotifyTerminatedUploads: false,
@@ -123,23 +128,26 @@ func Server() {
     stderr.Fatalf("Unable to create handler: %s", err)
   }
 
-  http.Handle(conf.uploadEndpoint, http.StripPrefix(conf.uploadEndpoint, handler))
-  if conf.listingEndpoint != conf.uploadEndpoint {
-    http.Handle(conf.listingEndpoint, http.StripPrefix(conf.listingEndpoint, homepage(store)))
+  if conf.ListingEndpoint != conf.FilesEndpoint {
+    mux := pat.New()
+    mux.Get("/", listingHandler(conf, store))
+    http.Handle(conf.ListingEndpoint, mux)
   }
+  http.Handle(conf.FilesEndpoint, http.StripPrefix(conf.FilesEndpoint, handler))
+
 
   var listener net.Listener
-  timeoutDuration := time.Duration(conf.timeout) * time.Millisecond
+  timeoutDuration := time.Duration(conf.Timeout) * time.Millisecond
 
-  if conf.httpSock != "" {
+  if conf.HttpSock != "" {
     if listener, err = util.NewUnixListener(address, timeoutDuration, timeoutDuration); err != nil {
       stderr.Fatalf("Unable to create listener: %s", err)
     }
-    stdout.Printf("You can now upload files to: http://%s%s", address, conf.uploadEndpoint)
   } else {
     if listener, err = util.NewListener(address, timeoutDuration, timeoutDuration); err != nil {
       stderr.Fatalf("Unable to create listener: %s", err)
     }
+    stdout.Printf("You can now upload files to: http://%s%s", address, conf.FilesEndpoint)
   }
 
   if err = http.Serve(listener, nil); err != nil {
@@ -147,7 +155,7 @@ func Server() {
   }
 }
 
-func homepage(store filestore.FileStore) http.HandlerFunc {
+func listingHandler(conf ServerConf, store filestore.FileStore) http.HandlerFunc {
   t, err := template.New("foo").Parse(`{{define "listing"}}<html><head><title>File Listing</title><style>
 * {
   font-family: monospace;
@@ -178,7 +186,7 @@ li {
   padding: 0;
 }
 </style></head><body><ul>
-{{ range . }}<li><a href="http://127.0.0.1:1080/files/{{ .ID }}">{{ index .MetaData "filename" }}</a></li>{{ end }}
+{{ range .Infos }}<li><a href="{{ $.Conf.Url }}{{ $.Conf.FilesEndpoint }}{{ .ID }}">{{ index .MetaData "filename" }}</a></li>{{ end }}
   </ul>
   </body>
 </html>{{end}}`)
@@ -189,6 +197,8 @@ li {
   return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     var err error
     var fileInfos []os.FileInfo
+
+    // todo: here read once, calling GetInfo read another once
     if fileInfos, err = ioutil.ReadDir(store.Path); err != nil {
       http.Error(w, "", 500)
       return
@@ -217,7 +227,11 @@ li {
     sort.Slice(infos, func(i, j int) bool {
       return infos[i].MetaData["filename"] < infos[j].MetaData["filename"]
     })
-    if err = t.ExecuteTemplate(w, "listing", infos); err != nil {
+    data := struct {
+      Infos []tusd.FileInfo
+      Conf  ServerConf
+    }{infos, conf,}
+    if err = t.ExecuteTemplate(w, "listing", data); err != nil {
       //stderr.Fatalf("Unable to render template: %s", err)
       http.Error(w, "", 500)
       return
