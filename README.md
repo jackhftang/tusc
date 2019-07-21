@@ -10,6 +10,13 @@ This is a command line implementation this library [go-tusd](https://github.com/
 
 ## Quick Start  
 
+Visit [releases page](https://github.com/jackhftang/tusc/releases) and download the tusc binary. 
+
+```bash 
+$ curl -LO https://github.com/jackhftang/tusc/releases/download/<version>/tusc_linux_amd64 -o tusc
+$ chmod u+x tusc 
+```
+
 Start server 
 
 ```bash

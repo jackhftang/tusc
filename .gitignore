@@ -25,6 +25,7 @@
 
 # End of https://www.gitignore.io/api/go
 
+/.tusc
 /data
 /tusc
 /tusc_darwin_amd64
