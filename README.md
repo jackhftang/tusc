@@ -1,5 +1,7 @@
 # tusc
 
+![build status](https://travis-ci.com/jackhftang/tusc.svg?branch=master)
+
 A single binary for both server and client of [tus resumable upload protocol](https://tus.io)
 
 ### Quick start on local  
