@@ -9,6 +9,9 @@ all: get
 get:
 	go get
 
+build:
+	go build cmd/tusc.go
+
 clean:
 	rm -rf tusc*
 

@@ -2,6 +2,7 @@ package main
 
 import (
   "github.com/jackhftang/tusc/internal"
+  "github.com/jackhftang/tusc/internal/util"
   "os"
 )
 
@@ -12,14 +13,14 @@ const usage = `Usage:
 
 func main() {
   if len(os.Args) < 2 {
-    internal.ExitWithMessages("No command", usage)
+    util.ExitWithMessages("No command", usage)
   }
   switch cmd := os.Args[1]; cmd {
   case "server", "s":
-    //internal.Server()
+    internal.Server()
   case "client", "c":
-    //internal.Client()
+    internal.Client()
   default:
-    internal.ExitWithMessages("Unknown command: "+cmd, usage)
+    util.ExitWithMessages("Unknown command: "+cmd, usage)
   }
 }

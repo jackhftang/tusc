@@ -5,6 +5,7 @@ import (
   "github.com/docopt/docopt-go"
   "github.com/eventials/go-tus"
   "github.com/eventials/go-tus/leveldbstore"
+  "github.com/jackhftang/tusc/internal/util"
   "net/http"
   "os"
 )
@@ -23,31 +24,33 @@ Options:
 `
 
 func Client() {
+  var err error
   arguments, _ := docopt.ParseDoc(clientUsage)
 
   file, _ := arguments.String("<file>")
   url, _ := arguments.String("<url>")
-  resume := getBool(arguments, "--resumable")
+  resume := util.GetBool(arguments, "--resumable")
 
+  // open file
   f, err := os.Open(file)
   if err != nil {
-    ExitWithMessages("Cannot open file: " + file)
+    util.ExitWithMessages("Cannot open file: " + file)
   }
   defer f.Close()
 
   // create the tus client
   var store tus.Store
   if resume {
-    path := getString(arguments, "--store")
+    path := util.GetString(arguments, "--store")
     store, err = leveldbstore.NewLeveldbStore(path)
     if err != nil {
-      ExitWithMessages("Cannot Open "+path, clientUsage)
+      util.ExitWithMessages("Cannot Open "+path, clientUsage)
     }
   }
 
   client, _ := tus.NewClient(url, &tus.Config{
-    ChunkSize:           getInt64(arguments, "--chuck-size"),
-    OverridePatchMethod: getBool(arguments, "--override-patch-method"),
+    ChunkSize:           util.GetInt64(arguments, "--chuck-size"),
+    OverridePatchMethod: util.GetBool(arguments, "--override-patch-method"),
     Resume:              resume,
     Store:               store,
     Header:              make(http.Header),
@@ -55,7 +58,10 @@ func Client() {
   })
 
   // create an upload from a file.
-  upload, _ := tus.NewUploadFromFile(f)
+  var upload *tus.Upload
+  if upload, err = tus.NewUploadFromFile(f); err != nil {
+    util.ExitWithMessages("Cannot create upload from file: " + f.Name())
+  }
 
   // create the uploader.
   var uploader *tus.Uploader
@@ -64,11 +70,14 @@ func Client() {
   } else {
     uploader, err = client.CreateUpload(upload)
   }
+  if err != nil {
+    util.ExitWithMessages("Failed to upload", err.Error())
+  }
 
   fmt.Println(uploader.Url())
 
   // start the uploading process.
   if err = uploader.Upload(); err != nil {
-    ExitWithMessages("Upload incomplete")
+    util.ExitWithMessages("Upload incomplete")
   }
 }
