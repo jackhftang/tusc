@@ -25,7 +25,9 @@
 
 # End of https://www.gitignore.io/api/go
 
-tusc
-tusc_darwin_amd64
-tusc_linux_amd64
-tusc_linux_arm
+/data
+/tusc
+/tusc_darwin_amd64
+/tusc_linux_amd64
+/tusc_linux_arm
+

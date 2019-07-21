@@ -1,5 +1,5 @@
 .PHONY: all
-all: get
+all: clean get
 	GOOS=windows GOARCH=amd64 go build -ldflags "-w -s" -o tusc_windows_amd64.exe cmd/tusc.go
 	GOOS=darwin GOARCH=amd64 go build -ldflags "-w -s" -o tusc_darwin_amd64 cmd/tusc.go
 	GOOS=linux GOARCH=amd64 go build -ldflags "-w -s" -o tusc_linux_amd64 cmd/tusc.go
