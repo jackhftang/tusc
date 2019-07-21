@@ -9,3 +9,5 @@ all: get
 get:
 	go get
 
+clean:
+	rm -rf tusc*
