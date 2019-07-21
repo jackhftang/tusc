@@ -4,6 +4,7 @@ all: clean get
 	GOOS=darwin GOARCH=amd64 go build -ldflags "-w -s" -o tusc_darwin_amd64 cmd/tusc.go
 	GOOS=linux GOARCH=amd64 go build -ldflags "-w -s" -o tusc_linux_amd64 cmd/tusc.go
 	GOOS=linux GOARCH=arm go build -ldflags "-w -s" -o tusc_linux_arm cmd/tusc.go
+	upx tusc*
 
 .PHONY: get
 get:

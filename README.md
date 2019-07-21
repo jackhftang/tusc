@@ -4,9 +4,9 @@
 
 A single binary for both server and client of [tus resumable upload protocol](https://tus.io). 
 
-This is a trim-down version of [tusd](https://github.com/tus/tusd) in favor of smaller binary size (< 10 MB rather than > 30MB). 
-S3, GCS, Prometheus, Hooks are not include (a.k.a. plain old http server with file storage). 
-
+This is a wrapper of [tusd](https://github.com/tus/tusd) with a nginx-like file listing page (or index page). 
+S3, GCS, Prometheus, Hooks are removed, in favor of smaller binary size (upx-ed < 5 MB rather than > 30MB). 
+ 
 For client, this is a command line implementation this library [go-tusd](https://github.com/eventials/go-tus).
 
 ### Quick Start  
@@ -24,6 +24,8 @@ $ echo test > test.txt
 $ tusc client http://127.0.0.1:8080/files/ text.txt     # not resumable
 $ tusc client http://127.0.0.1:8080/files/ text.txt -r  # resumable
 ```
+
+And then visit to [file listing page](http://127.0.0.1:8080)
 
 ## Server Options 
 
