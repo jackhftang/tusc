@@ -12,15 +12,10 @@ Start server
 $ tusc server -h 127.0.0.1 -p 8080
 ```
 
-Create a file
- 
+Create and upload a file 
+
 ```bash 
 $ echo test > test.txt
-```
-
-Upload file 
-
-```bash 
 $ tusc client http://127.0.0.1:8080 text.txt  
 ```
 
