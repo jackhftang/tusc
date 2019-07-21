@@ -5,12 +5,7 @@
     "preRelease": false,
     "draft": false,
     "tokenRef": "GITHUB_TOKEN",
-    "assets": [
-      "tusc_windows_amd64.exe",
-      "tusc_darwin_amd64",
-      "tusc_linux_amd64",
-      "tusc_linux_arm"
-    ],
+    "assets": "tusc*",
     "timeout": 0
   }
 }
