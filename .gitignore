@@ -25,6 +25,7 @@
 
 # End of https://www.gitignore.io/api/go
 
+/var
 /.tusc
 /data
 /tusc

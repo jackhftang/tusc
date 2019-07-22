@@ -1,6 +1,6 @@
 # tusc
 
-![build status](https://travis-ci.com/jackhftang/tusc.svg?branch=master)
+[![build status](https://travis-ci.com/jackhftang/tusc.svg?branch=master)](https://travis-ci.org/jackhftang/tusc)
 
 A single binary for both server and client of [tus resumable upload protocol](https://tus.io). 
 
