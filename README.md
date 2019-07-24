@@ -2,11 +2,11 @@
 
 [![build status](https://travis-ci.com/jackhftang/tusc.svg?branch=master)](https://travis-ci.org/jackhftang/tusc)
 
-A single binary for both server and client of [tus resumable upload protocol](https://tus.io). 
+TUS **C**ommand line (tusc) is a small static binary for both server and client of [tus resumable upload protocol](https://tus.io). 
 
-This is a wrapper of [tusd](https://github.com/tus/tusd) with nginx-like file listing page (or index page) is added. 
-Features like S3, GCS, Prometheus, Hooks are removed from tusd, in favor of smaller binary size (< 5 MB after upx-ed rather than > 30MB raw). 
-This is a command line implementation this library [go-tusd](https://github.com/eventials/go-tus).
+Personally, I need tusc for uploading files in a CI process and a simple UI for downloading (like nginx autoindex). 
+The chucked and resumable feature make it possible to bypass some payload size limitation imposed by proxy.
+Also, small size of binary make it convenient to be included in docker image. 
 
 ## Quick Start  
 
@@ -33,8 +33,12 @@ $ tusc client http://127.0.0.1:8080/files/ text.txt -r  # resumable
 
 And then visit to [file listing page](http://127.0.0.1:8080)
 
-### Server Options 
+### Server 
 
+TUSC is a wrapper of [tusd](https://github.com/tus/tusd) with and addition of a listing page.
+Features like S3, GCS, Prometheus, Hooks are removed from tusd, in favor of smaller binary size. 
+
+#### Options
 
 ```
 $ tusc s --help
@@ -58,7 +62,11 @@ Options:
   --behind-proxy                  Respect X-Forwarded-* and similar headers which may be set by proxies [default: false]
 ```
 
-### Client Options
+### Client
+
+TUSC is a command line implementation of this excellent library [go-tusd](https://github.com/eventials/go-tus).
+
+#### Options
 
 ```
 $ tusc c --help
@@ -74,3 +82,6 @@ Options:
   --chuck-size BYTE         Size of chucks of file [default: 2097152]
   --override-patch-method   Sending a POST request instead of PATCH [default: false] 
 ```
+
+ 
+

@@ -14,7 +14,7 @@ build:
 	go build cmd/tusc.go
 
 clean:
-	rm -rf tusc*
+	rm -rf tusc* data .tusc
 
 release-patch: all
 	release-it -n -i patch
