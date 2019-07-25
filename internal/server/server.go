@@ -37,7 +37,7 @@ Options:
   --store-size BYTE               Size of space allowed for storage [default: 0]
   --timeout TIMEOUT               Read timeout for connections in milliseconds.  A zero value means that reads will not timeout [default: 30*1000]
   --behind-proxy                  Respect X-Forwarded-* and similar headers which may be set by proxies [default: false]
-	--inc 													Sort filename in increasingly alphabetical order in listing page [default: false]
+	--inc                           Sort filename in increasingly alphabetical order in listing page [default: false]
 `
 
 type ServerConf struct {
@@ -209,7 +209,6 @@ td {
 			filename := f.Name()
 			ext := ".info"
 			lenOfID := len(filename) - len(ext)
-			fmt.Println("filename", filename, filename[lenOfID:])
 
 			// only care .info file
 			if lenOfID > 0 && filename[lenOfID:] == ext {
@@ -222,13 +221,17 @@ td {
 					if fn, ok := info.MetaData["filename"]; ok {
 						filename = fn
 					}
+					var offset int64 = 100
+					if info.Size != 0 {
+						fmt.Println(info.Size)
+						offset = info.Offset * 100 / info.Size
+					}
 					rows = append(rows, Row{
 						ID:       info.ID,
 						Filename: filename,
 						Size:     humanize.Bytes(uint64(info.Size)),
-						Offset:   info.Offset * 100 / info.Size,
+						Offset:   offset,
 					})
-					fmt.Println("info", info)
 				}
 			}
 		}
