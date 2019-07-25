@@ -37,6 +37,7 @@ Options:
   --store-size BYTE               Size of space allowed for storage [default: 0]
   --timeout TIMEOUT               Read timeout for connections in milliseconds.  A zero value means that reads will not timeout [default: 30*1000]
   --behind-proxy                  Respect X-Forwarded-* and similar headers which may be set by proxies [default: false]
+	--inc 													Sort filename in increasingly alphabetical order in listing page [default: false]
 `
 
 type ServerConf struct {
@@ -51,6 +52,7 @@ type ServerConf struct {
 	FilesEndpoint   string `docopt:"--files-endpoint"`
 	Timeout         int64  `docopt:"--timeout"`
 	IsBehindProxy   bool   `docopt:"--behind-proxy"`
+	Inc             bool   `docopt:"--inc"`
 }
 
 var stdout = log.New(os.Stdout, "[tusd] ", log.Ldate|log.Ltime)
@@ -75,6 +77,7 @@ func Server() {
 	conf.FilesEndpoint, _ = arguments.String("--files-endpoint")
 	conf.Timeout = util.GetInt64(arguments, "--timeout")
 	conf.IsBehindProxy, _ = arguments.Bool("--behind-proxy")
+	conf.Inc, _ = arguments.Bool("--inc")
 	fmt.Println(conf)
 
 	storeCompoesr := tusd.NewStoreComposer()
@@ -231,9 +234,15 @@ td {
 		}
 
 		// sort file by name
-		sort.Slice(rows, func(i, j int) bool {
-			return rows[i].Filename < rows[j].Filename
-		})
+		if conf.Inc {
+			sort.Slice(rows, func(i, j int) bool {
+				return rows[i].Filename < rows[j].Filename
+			})
+		} else {
+			sort.Slice(rows, func(i, j int) bool {
+				return rows[i].Filename > rows[j].Filename
+			})
+		}
 
 		data := struct {
 			Rows []Row
