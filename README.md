@@ -5,7 +5,7 @@
 TUS **C**ommand line (tusc) is a small static binary for both server and client of [tus resumable upload protocol](https://tus.io). 
 
 Personally, I need tusc for uploading files in a CI process and a simple UI for downloading (like nginx autoindex). 
-The chucked and resumable feature make it possible to bypass some payload size limitation imposed by proxy.
+The chucked and resumable feature make it possible to bypass some payload size limitation imposed by proxy (e.g. cloudflare).
 Also, small size of binary make it convenient to be included in docker image. 
 
 ## Quick Start  
@@ -33,9 +33,11 @@ $ tusc client http://127.0.0.1:8080/files/ text.txt -r  # resumable
 
 And then visit to [file listing page](http://127.0.0.1:8080)
 
+## Command
+
 ### Server 
 
-TUSC is a wrapper of [tusd](https://github.com/tus/tusd) with and addition of a listing page.
+TUSC is a wrapper of [tusd](https://github.com/tus/tusd) with an additional listing page.
 Features like S3, GCS, Prometheus, Hooks are removed from tusd, in favor of smaller binary size. 
 
 #### Options
