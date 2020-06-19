@@ -17,10 +17,10 @@ clean:
 	rm -rf tusc* data .tusc
 
 release-patch: all
-	release-it -n -i patch
+	release-it --ci -i patch
 
 release-minor: all
-	release-it -n -i minor
+	release-it --ci -i minor
 
 release-major: all
-	release-it -n -i major
+	release-it --ci -i major
