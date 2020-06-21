@@ -5,7 +5,7 @@
 TUS **C**ommand line (tusc) is a small static binary for both server and client of [tus resumable upload protocol](https://tus.io). 
 
 Personally, I need tusc for uploading files in a CI process and a simple UI for downloading (like nginx autoindex). 
-The chucked and resumable feature make it possible to bypass some payload size limitation imposed by proxy (e.g. cloudflare).
+The chunked and resumable feature make it possible to bypass some payload size limitation imposed by proxy (e.g. cloudflare).
 Also, small size of binary make it convenient to be included in docker image. 
 
 ## Quick Start  
@@ -81,7 +81,7 @@ Usage:
 Options:
   -r --resumable            Save meta data in store for resumable uploads
   --store PATH              Path to save meta data for resume [default: ./.tusc]
-  --chuck-size BYTE         Size of chucks of file [default: 2097152]
+  --chunk-size BYTE         Size of chunks of file [default: 2097152]
   --override-patch-method   Sending a POST request instead of PATCH [default: false] 
 ```
 

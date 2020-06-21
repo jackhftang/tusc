@@ -19,7 +19,7 @@ Usage:
 Options:
   -r --resumable            Save meta data for resumable uploads  
   --store PATH              Path to save meta data for resume [default: ./.tusc]
-  --chuck-size BYTE         Size of chucks of file [default: 2097152]
+  --chunk-size BYTE         Size of chunks of file [default: 2097152]
   --override-patch-method   Sending a POST request instead of PATCH [default: false]
 `
 
@@ -56,7 +56,7 @@ func Client() {
 	}
 
 	client, _ := tus.NewClient(conf.url, &tus.Config{
-		ChunkSize:           util.GetInt64(arguments, "--chuck-size"),
+		ChunkSize:           util.GetInt64(arguments, "--chunk-size"),
 		OverridePatchMethod: util.GetBool(arguments, "--override-patch-method"),
 		Resume:              conf.resume,
 		Store:               store,
