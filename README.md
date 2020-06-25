@@ -75,14 +75,14 @@ $ tusc c --help
 tusc client
 
 Usage:
-  tusc (client|c) <url> <file> [options]
+  tusc (client|c) <url> <file> [-H <header>]... [options]
   tusc (client|c) --help
 
 Options:
-  -r --resumable            Save meta data in store for resumable uploads
+  -r --resumable            Save meta data for resumable uploads [default: false]
   --store PATH              Path to save meta data for resume [default: ./.tusc]
   --chunk-size BYTE         Size of chunks of file [default: 2097152]
-  --override-patch-method   Sending a POST request instead of PATCH [default: false] 
+  --override-patch-method   Sending a POST request instead of PATCH [default: false]
 ```
 
  
