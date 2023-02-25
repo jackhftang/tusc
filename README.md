@@ -20,7 +20,7 @@ $ chmod u+x tusc
 Start server 
 
 ```bash
-$ tusc server -h 127.0.0.1 -p 8080
+$ tusc server -b 127.0.0.1 -p 8080
 ```
 
 Create and upload a file 
